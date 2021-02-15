@@ -85,7 +85,7 @@ int utf8len(char *s){
     return UTF8bytes[(U32)(U8)s[0]] + 1;
 }
 
-void wfgets(char *str, int count, FILE  *fp) {
+int wfgets(char *str, int count, FILE  *fp) {
     int c, i = 0;
     while (i<count-1 && ((c=getc(fp))!=EOF)) {
         str[i++]=c;
@@ -93,6 +93,7 @@ void wfgets(char *str, int count, FILE  *fp) {
             break;
     }
     str[i]=0;
+    return i;
 }
 /*
 // killer of pagefaults
@@ -349,13 +350,13 @@ void hent9( char *in,char *out){
     memcpy(q, p, end-p);  q[end-p]=0; \
   }
    // breaks wordmodel
-   // PROCESS('[', in, out, 1)
-  //  PROCESS(']', out, in, 1)
-   /* PROCESS('&', in, out, 1)
+    PROCESS('[', in, out, 1)
+    PROCESS(']', out, in, 1)
+    PROCESS('&', in, out, 1)
     do {
            j=*in++; *out++=j;
         }
-        while (j!=0); */
+        while (j!=0); 
 
 
 }
@@ -558,7 +559,7 @@ void henttag1( char *in,char *out,FILE *o,int title){
 
     j = strlen(in);
  
-    if (j>13&& title && text==0 &&  memcmp(p4+6,"<text ",6)==0  ) text=1;
+    if (j>13&& title && text==0 &&  memcmp(in+6,"<text ",6)==0  ) text=1;
     if (j>18 &&title && text==1 &&   (memcmp(&in[j-8],"</text>",7)==0 || memcmp(&in[j-4]," />",3)==0 ) ) text=0;
       
     if (title==1 && move==0 && text)   {
@@ -610,6 +611,7 @@ int henttag1r( char *in,char *out,char *p2,int size,int title){
     if (move==0 && title && text && j){
         if (f){
         // text line only
+        
         for (int i = 0; i<k;i++ ){
             out[i]=*in++;
           }
@@ -620,6 +622,7 @@ int henttag1r( char *in,char *out,char *p2,int size,int title){
             out[i+k]=*p4++;
           }
           out[k+k1]=0;
+          hent9(out,in);
        j = strlen(out);
        if (memcmp(&out[j-12],"</revision>",11)==0 ||memcmp(&out[j-8],"</text>",7)==0){
             move=text=title=0;
@@ -647,7 +650,7 @@ void hentfiles1( char *in,char *out,FILE *o,int title){
 
     j = strlen(in);
 
-    if (j>13&& title && text==0 &&  memcmp(p4+6,"<text ",6)==0  ) text=1;
+    if (j>13&& title && text==0 &&  memcmp(in+6,"<text ",6)==0  ) text=1;
     if (j>18 &&title && text==1 &&   (memcmp(&in[j-8],"</text>",7)==0 || memcmp(&in[j-4]," />",3)==0 )) text=0;
       
     if (title && move==0 && text) {
@@ -710,6 +713,7 @@ int hentfiles1r( char *in,char *out,char *p2,int size,int title){
             out[i+k]=*p4++;
           }
           out[k+k1]=0;
+          hent9(out,in);
        j = strlen(out);
        if (memcmp(&out[j-12],"</revision>",11)==0 ||memcmp(&out[j-8],"</text>",7)==0){
             move=text=title=f=0;
@@ -737,7 +741,7 @@ void hentnumbers1( char *in,char *out,FILE *o,int title){
 
     j = strlen(in);
 
-    if (j>13&& title && text==0 &&  memcmp(p4+6,"<text ",6)==0  ) text=1;
+    if (j>13&& title && text==0 &&  memcmp(in+6,"<text ",6)==0  ) text=1;
     if (j>18 &&title && text==1 &&   (memcmp(&in[j-8],"</text>",7)==0 || memcmp(&in[j-4]," />",3)==0 )) text=0;
       
     if (title && move==0 && text) {
@@ -800,6 +804,7 @@ int hentnumbers1r( char *in,char *out,char *p2,int size,int title){
             out[i+k]=*p4++;
           }
           out[k+k1]=0;
+          hent9(out,in);
        j = strlen(out);
        if (memcmp(&out[j-12],"</revision>",11)==0 ||memcmp(&out[j-8],"</text>",7)==0){
             move=text=title=f=0;
@@ -827,7 +832,7 @@ void hentalb1( char *in,char *out,FILE *o,int title){
 
     j = strlen(in);
 
-    if (j>13&& title && text==0 &&  memcmp(p4+6,"<text ",6)==0  ) text=1;
+    if (j>13&& title && text==0 &&  memcmp(in+6,"<text ",6)==0  ) text=1;
 
     if (title && move==0 && text ) {
        move=1;
@@ -860,7 +865,6 @@ int hentalb1r( char *in,char *out,char *p2,int size,int title){
     int i, j, k=0;
     static int  move=0,text=0;
     static  char *p4=p2;
-   // char *p8=out;
     j = strlen(in);
   
     if (title&& move==1 && text && j){
@@ -869,6 +873,7 @@ int hentalb1r( char *in,char *out,char *p2,int size,int title){
             out[i+k]=*p4++;
           }
           out[k+k1]=0;
+          hent9(out,in);
        j = strlen(out);
        if (memcmp(&out[j-12],"</revision>",11)==0 ||memcmp(&out[j-8],"</text>",7)==0){
             move=text=title=0;
@@ -877,7 +882,7 @@ int hentalb1r( char *in,char *out,char *p2,int size,int title){
         return 1;    
     }
     else{
-    if (j>13&&  size&& memcmp(in+6,"<text ",6)==0 &&  (strstr(in, "Album infobox |"))) {
+    if (j>13&&  size&& memcmp(in+6,"<text ",6)==0 &&  (strstr(in, "Album infobox |") ||strstr(in, "Infobox Film |") )) {
     text=move=1;
     do {
         j=*in++; *out++=j;
@@ -899,12 +904,11 @@ void hentdis1( char *in,char *out,FILE *o,int title){
     static  int lnu=0,f=0, b1=0, lc=0,co=0,move=0,text=0;
     unsigned char   *ps;
     char *p4=in;
-    //char *p8=out;
     char s[8192*8];
 
     j = strlen(in);
 
-    if (j>13&& title && text==0 &&  memcmp(p4+6,"<text ",6)==0  ) text=1;
+    if (j>13&& title && text==0 &&  memcmp(in+6,"<text ",6)==0  ) text=1;
 
     if (title && move==0 && text ) {
        move=1;
@@ -936,7 +940,6 @@ int hentdis1r( char *in,char *out,char *p2,int size,int title){
     int i, j, k=0;
     static int  move=0,text=0;
     static  char *p4=p2;
-    //char *p8=out;
     j = strlen(in);
   
     if (title&& move==1 && text && j){
@@ -945,6 +948,7 @@ int hentdis1r( char *in,char *out,char *p2,int size,int title){
             out[i+k]=*p4++;
           }
           out[k+k1]=0;
+          hent9(out,in);
        j = strlen(out);
        if (memcmp(&out[j-12],"</revision>",11)==0 ||memcmp(&out[j-8],"</text>",7)==0){
             move=text=title=0;
@@ -980,7 +984,7 @@ void hentclu1( char *in,char *out,FILE *o,int title){
 
     j = strlen(in);
 
-    if (j>13&& title && text==0 &&  memcmp(p4+6,"<text ",6)==0  ) text=1;
+    if (j>13&& title && text==0 &&  memcmp(in+6,"<text ",6)==0  ) text=1;
 
     if (title && move==0 && text ) {
        move=1;
@@ -1021,6 +1025,7 @@ int hentclu1r( char *in,char *out,char *p2,int size,int title){
             out[i+k]=*p4++;
           }
           out[k+k1]=0;
+          hent9(out,in);
        j = strlen(out);
        if (memcmp(&out[j-12],"</revision>",11)==0 ||memcmp(&out[j-8],"</text>",7)==0){
             move=text=title=f=0;
@@ -1029,7 +1034,11 @@ int hentclu1r( char *in,char *out,char *p2,int size,int title){
         return 1;    
     }
     else{
-    if (j>13&& size&& memcmp(in+6,"<text ",6)==0 &&  (strstr(in, "club infobox |"))) {
+    if (j>13&& size&& memcmp(in+6,"<text ",6)==0 &&  (
+    (strstr(in, "club infobox |") ||
+     strstr(in, "player infobox |") ||
+      strstr(in, "Olympics infobox |")) 
+      )) {
     text=f=1,move=1;
     do {
         j=*in++; *out++=j;
@@ -1103,9 +1112,8 @@ void decode_txt_wit(FILE*in,  FILE*out1,U64 size){
     setpos(in,insize+1);
     int header=0,title=0,files=0,number=0,alb=0,diso=0,clu=0;
     do {
-        wfgets(s, 8192*8, in);    
-        
-        j = strlen(s);
+        j=wfgets(s, 8192*8, in);    
+
         if (curpos(in) > tsize ) {
             j=j-(curpos(in)-tsize); // cut tail
             s[j]=0;
@@ -1209,8 +1217,8 @@ void decode_txt_wit(FILE*in,  FILE*out1,U64 size){
             }
         }
         if (strstr(s, "<text ") && strstr(s, "Disorder infobox |")) diso=1,number= title=files=0;
-        if (strstr(s, "<text ") && strstr(s, "Album infobox |")) alb=1,number= title=files=0;
-        if (strstr(s, "<text ") && strstr(s, "club infobox |")) clu=1,number= title=files=0;
+        if (strstr(s, "<text ") && (strstr(s, "Album infobox |")||strstr(s, "Infobox Film |") )) alb=1,number= title=files=0;
+        if (strstr(s, "<text ") && (strstr(s, "club infobox |") || strstr(s, "player infobox |") || strstr(s, "Olympics infobox |"))) clu=1,number= title=files=0;
         int m=1,n=1,q=1,w=1,z=1,x=1;
         while (m||n||q||w||z||x){        // loop over until not
             m=henttag1r(s,o,t1,taglenght,title);
@@ -1276,8 +1284,8 @@ void encode_txt_wit(FILE* in, FILE* out, U64 len) {
     int i, j, f = 0, lastID = 0,tf=0;
     int ti=0,files=0,number=0,alb=0,diso=0,clu=0;
   do {
-    wfgets(s, 8192*8, in);
-    j = strlen(s);
+    j=wfgets(s, 8192*8, in);
+
     if (f==2) {
         if (*(int*)&s[4]==0x3E736E3C) { // ns '>sn<'
             char *p =strchr(s, '>');
@@ -1346,8 +1354,8 @@ void encode_txt_wit(FILE* in, FILE* out, U64 len) {
         if (p)  { tf=1, p = strchr(p, '>');  skip= (char*)p+1-(char*)o;
         if(p[-1]=='/' /*|| p[2]==0*/) tf=0;  
         if (strstr(o, "Disorder infobox |")) diso=1,ti=files=number=0;
-        if (strstr(o, "Album infobox |")) alb=1,ti=files=number=0;
-        if (strstr(o, "club infobox |")) clu=1,ti=files=number=0;
+        if (strstr(o, "Album infobox |") ||strstr(o, "Infobox Film |") ) alb=1,ti=files=number=0;
+        if (strstr(o, "club infobox |")|| strstr(o, "player infobox |") ||strstr(o, "Olympics infobox |")) clu=1,ti=files=number=0;
         }
         
         if (strstr(o, "</text>") || strstr(o, "</revision>")|| strstr(o, "</page>")|| strstr(o, "</sha1>"))  tf=0;
